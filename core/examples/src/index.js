@@ -1,3 +1,2 @@
-import core from '../../index'
+import Receiver from '../../src/receiver'
 
-core()
