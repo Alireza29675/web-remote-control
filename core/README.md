@@ -1,1 +1,1 @@
-# CORE
+# Package Template
