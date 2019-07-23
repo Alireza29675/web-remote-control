@@ -1,3 +1,3 @@
-import emitter from '../../src/emitter'
+import Emitter from '../../src/emitter'
 
-emitter()
+const emitter = new Emitter()

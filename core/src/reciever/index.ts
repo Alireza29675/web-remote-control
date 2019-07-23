@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
 
-class Emitter {
+class Receiver {
 
     constructor (server: string = 'ws://localhost', port: number = 3001) {
         const socket = io(`${server}:${port}`)
@@ -9,4 +9,4 @@ class Emitter {
 
 }
 
-export default Emitter
+export default Receiver
