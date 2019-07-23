@@ -8,3 +8,4 @@ examples
 .babelrc
 .gitignore
 webpack.config.js
+__tests__
