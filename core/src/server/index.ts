@@ -1,13 +1,22 @@
 import { Server } from "http";
-import io from 'socket.io'
+import io from 'socket.io';
 
 class SocketServer {
 
     private io: io.Server
     
-    constructor (server?: Server) {
-        this.io = io(server || 3001, { path: '/remote', serveClient: false })
-        this.io.on('connection', this.connected.bind(this))
+    constructor (port: number = 3001) {
+        this.io = io.listen(port)
+        this.sockets.on('connection', function(socket){  
+            console.log('a user connected');  
+            socket.on('disconnect', function(){
+               console.log('user disconnected'); 
+            });
+        });
+    }
+
+    private get sockets () {
+        return this.io.sockets
     }
 
     private connected (socket: io.Socket) {

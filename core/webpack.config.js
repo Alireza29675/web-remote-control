@@ -12,7 +12,11 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/,
+                test: /\.tsx?$/,
+                loader: "ts-loader"
+            },
+            {
+                test: /\.jsx?$/,
                 use: "babel-loader",
                 exclude: /node_modules/
             },
@@ -27,6 +31,7 @@ module.exports = {
         extensions: [".js", ".jsx", ".ts", ".tsx"]
     },
     devServer: {
-        port: 3001
+        port: 3000,
+        contentBase: "examples/browser"
     }
 };

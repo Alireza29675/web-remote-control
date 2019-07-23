@@ -1,3 +1,3 @@
-import pack from '../../src'
+import Server from '../../src/server'
 
-pack()
+const server = new Server()

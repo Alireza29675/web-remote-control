@@ -1,3 +1,3 @@
-import pack from '../../src'
+import emitter from '../../src/emitter'
 
-pack()
+emitter()
