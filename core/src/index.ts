@@ -7,3 +7,9 @@ export {
     Receiver,
     Server
 };
+
+export default {
+    Emitter,
+    Receiver,
+    Server
+}
