@@ -1,20 +1,25 @@
 import { Server } from "http";
 import io from 'socket.io';
+import createHashGenerator from '../shared/createHashGenerator'
 
-// Probably quick hash is not a good library to use
-import farmHash from 'farmhash'
+enum SOCKET_TYPES {
+    EMITTER,
+    RECEIVER
+}
+
+type HashType = number
 
 class SocketServer {
 
-    // Generates a random hash seed each time
-    private seed: number = Math.floor(Math.random() * 10000)
+    private salt = Math.random().toString(36).substr(2, 10)
+    private generator: IterableIterator<HashType> = createHashGenerator(this.salt)
 
     private io: io.Server
     private emitterNS: io.Namespace
     private receiverNS: io.Namespace
 
-    private emitters: Map<string, io.Socket> = new Map<string, io.Socket>()
-    private receivers: Map<string, io.Socket> = new Map<string, io.Socket>()
+    private emitters: Map<HashType, io.Socket> = new Map<HashType, io.Socket>()
+    private receivers: Map<HashType, io.Socket> = new Map<HashType, io.Socket>()
     
     constructor (port: number = 3001) {
         this.io = io.listen(port)
@@ -26,21 +31,34 @@ class SocketServer {
     }
 
     /**
-     * Hash/Socket Mapping
+     * 
      */
 
-    public getHash (socketOrId: string | io.Socket) {
-        const id = (typeof socketOrId === 'string') ? socketOrId : socketOrId.id
-        return farmHash.hash32WithSeed(id, this.seed)
-    }
-    public getEmitter (hash: string) {
+    public getEmitter (hash: HashType) {
         return this.emitters.get(hash)
     }
-    public getReceiver (hash: string) {
+    public getReceiver (hash: HashType) {
         return this.receivers.get(hash)
     }
-    public getSocket (hash: string) {
+    public getSocket (hash: HashType) {
         return this.getEmitter(hash) || this.getReceiver(hash)
+    }
+    public getSocketType (hash: HashType) {
+        if (this.emitters.has(hash)) {
+            return SOCKET_TYPES.EMITTER;
+        }
+        if (this.receivers.has(hash)) {
+            return SOCKET_TYPES.RECEIVER;
+        }
+        return false;
+    }
+
+    /**
+     * Hash generator
+     */
+
+    private generateHash (): HashType {
+        return this.generator.next().value
     }
 
     /**
@@ -48,26 +66,32 @@ class SocketServer {
      */
 
     private onEmitterConnected (socket: io.Socket) {
-        console.log('new emitter')
-        this.emitters.set(this.getHash(socket), socket)
-        socket.on('disconnect', this.onEmitterDisconnected.bind(this, socket))
+        const hash = this.generateHash()
+        this.emitters.set(hash, socket)
+        socket.on('disconnect', this.onEmitterDisconnected.bind(this, hash))
+        // Socket registration
+        socket.emit('register', { hash })
+        console.log(this.emitters)
     }
-    private onEmitterDisconnected (socket: io.Socket) {
-        console.log('emitter left')
-        this.emitters.delete(this.getHash(socket))
+    private onEmitterDisconnected (hash: HashType) {
+        this.emitters.delete(hash)
+        console.log(this.emitters)
     }
 
     /**
      * Receiver Listeners
      */
     private onReceiverConnected (socket: io.Socket) {
-        console.log('new receiver')
-        this.receivers.set(this.getHash(socket), socket)
-        socket.on('disconnect', this.onReceiverDisconnected.bind(this, socket))
+        const hash = this.generateHash()
+        this.receivers.set(hash, socket)
+        socket.on('disconnect', this.onReceiverDisconnected.bind(this, hash))
+        // Socket registration
+        socket.emit('register', { hash })
+        console.log(this.receivers)
     }
-    private onReceiverDisconnected (socket: io.Socket) {
-        console.log('receiver left')
-        this.receivers.delete(this.getHash(socket))
+    private onReceiverDisconnected (hash: HashType) {
+        this.receivers.delete(hash)
+        console.log(this.receivers)
     }
 
 }
