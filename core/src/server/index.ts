@@ -75,7 +75,7 @@ class WRCServer {
             return false;
         }
         this.pairs.set(hash, toHash);
-        this.pairs.set(toHash, hash);
+        this.pairsMirror.set(toHash, hash);
         return true;
     }
     private unPair (hash: HashType) {
@@ -92,28 +92,40 @@ class WRCServer {
         return this.pairs.get(hash) || this.pairsMirror.get(hash)
     }
     private arePaired (hash: HashType, anotherHash: HashType) {
-        return ((this.isBusy(hash) && this.isBusy(anotherHash)) && this.getPair(hash) === anotherHash && this.getPair(anotherHash) === hash)
+        const pair = (this.getPair(hash) === anotherHash && this.getPair(anotherHash) === hash)
+        return pair;
     }
 
     private pairRequest (toHash: HashType, hash: HashType) {
         const socket = this.getSocket(hash)
+        const socketToPair = this.getSocket(toHash)
         if (!socket) {
+            console.log('no socket')
+            return false;
+        }
+        if (!socketToPair) {
+            socket.emit('pair-request', {done: false, to: toHash, message: `socket not found`})
             return false;
         }
         if (this.arePaired(hash, toHash)) {
-            socket.emit('pair-request', {done: true, message: `already paired`})
+            socket.emit('pair-request', {done: true, to: toHash, message: `already paired`})
             return true;
         }
         if (this.isBusy(toHash)) {
-            socket.emit('pair-request', { done: false, message: `socket is paired with another device` })
+            socket.emit('pair-request', { done: false, to: toHash, message: `socket is paired with another device` })
+            socketToPair.emit('pair-request', { done: false, to: hash, message: `Tried to connect with you, however, you're busy right now` })
             return false;
         }
         if (this.isBusy(hash)) {
             this.unPair(hash)
             this.pair(hash, toHash)
-            socket.emit('pair-request', {done: true, message: `unpaired from previous connection and paired to new one`})
+            socket.emit('pair-request', {done: true, to: toHash, message: `unpaired from previous connection and paired to new one`})
+            socketToPair.emit('pair-request', { done: true, to: hash, message: `connection requested and paired with you` })
             return true;
         }
+        this.pair(hash, toHash)
+        socket.emit('pair-request', {done: true, to: toHash, message: `paired`})
+        socketToPair.emit('pair-request', { done: true, to: hash, message: `connection requested and paired with you` })
     }
 
     private unPairRequest (hash: HashType) {

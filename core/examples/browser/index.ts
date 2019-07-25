@@ -6,14 +6,21 @@ const $: (q: string) => HTMLElement | null = (q) => document.querySelector(q)
 
 const selfHashElement = $('.self');
 const pairHashElement = $('.paired');
-const buttonElement = $('button')
+const pairElement = $('.pair')
+const unPairElement = $('.un-pair')
 
 if (selfHashElement) { selfHashElement.innerHTML = client.hash + '' }
 if (pairHashElement) { pairHashElement.innerHTML = '----------------------------------------------------' }
 
-if (buttonElement) {
-    buttonElement.addEventListener('click', () => {
-        const el = prompt(`Enter connection's hash`)
-        console.log(el)
+if (pairElement) {
+    pairElement.addEventListener('click', () => {
+        const hashToPair = prompt(`Enter connection's hash`) + ''
+        client.pair(hashToPair)
+    })
+}
+
+if (unPairElement) {
+    unPairElement.addEventListener('click', () => {
+        client.unpair()
     })
 }

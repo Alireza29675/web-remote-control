@@ -22,6 +22,8 @@ class WRCClient {
         this.socket.on('register', (data: { hash: string }) => this.register(data.hash))
         this.socket.on('signal', (signal: { action: string, data: any }) => this.onSignal(signal))
 
+        this.socket.on('pair-request', console.log)
+
         this.store = {
             hash: localStorage.get('hash'),
             lastSocketID: localStorage.get('lastSocketID')
