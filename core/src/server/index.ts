@@ -53,6 +53,21 @@ class WRCServer {
         socket.on('im-alive', (data) => this.recover(data, socket, hash))
         socket.on('pair-request', (data: {toHash: HashType}) => this.pairRequest(data.toHash, hash.value))
         socket.on('un-pair-request', () => this.unPairRequest(hash.value))
+        socket.on('signal', (data: { action: string, data: any }) => this.emit(data.action, data.data, hash.value))
+    }
+
+    private emitToHash (hash: HashType, action: string, data: any) {
+        const pairSocket = this.getSocket(hash)
+        if (pairSocket) {
+            pairSocket.emit('signal', { action, data })
+        }
+    }
+
+    private emit (action: string, data: any, selfHash: HashType) {
+        const pairHash = this.getPair(selfHash)
+        if (pairHash) {
+            this.emitToHash(pairHash, action, data)
+        }
     }
 
     private pair (hash: HashType, toHash: HashType) {
@@ -85,6 +100,10 @@ class WRCServer {
         if (!socket) {
             return false;
         }
+        if (this.arePaired(hash, toHash)) {
+            socket.emit('pair-request', {done: true, message: `already paired`})
+            return true;
+        }
         if (this.isBusy(toHash)) {
             socket.emit('pair-request', { done: false, message: `socket is paired with another device` })
             return false;
@@ -93,6 +112,7 @@ class WRCServer {
             this.unPair(hash)
             this.pair(hash, toHash)
             socket.emit('pair-request', {done: true, message: `unpaired from previous connection and paired to new one`})
+            return true;
         }
     }
 
