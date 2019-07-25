@@ -14,12 +14,20 @@ if (pairHashElement) { pairHashElement.innerHTML = '----------------------------
 
 client.onPair = (hash) => {
     if (pairHashElement) { pairHashElement.innerHTML = hash; }
+    console.log(client.isReady)
 }
+
+client.on('up', console.log)
+const number = Math.floor(Math.random() * 5);
+console.log(`I'm ${number}`)
+
+setInterval(() => {
+    client.emit('up', { data: number })
+}, Math.floor(Math.random() * 2000) + 1000)
 
 if (pairElement) {
     pairElement.addEventListener('click', () => {
         const hashToPair = prompt(`Enter connection's hash`) + ''
-        client.pair(hashToPair)
     })
 }
 

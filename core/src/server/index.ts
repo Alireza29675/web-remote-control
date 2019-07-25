@@ -170,7 +170,7 @@ class WRCServer {
         const previousSocketId = previousSocket ? md5(previousSocket.id) : null;
         
         if (previousSocketId) {
-            if (previousSocketId === data.lastSocketID) {
+            if (previousSocketId === lastSocketID) {
                 this.sockets.delete(tempHash.value)
                 this.sockets.set(data.hash, socket)
                 tempHash.value = data.hash

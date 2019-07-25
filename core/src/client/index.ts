@@ -3,6 +3,7 @@ import io from 'socket.io-client'
 import store from 'store'
 
 // FIXME: One localStorage for all Emitter instances is a big mistake
+// TODO: Methods for ask which behaves like http-server
 const localStorage = store.namespace('web-remote-control_core_meta')
 
 type SignalCB = (data?: any) => void;
@@ -10,6 +11,9 @@ type SignalCB = (data?: any) => void;
 class WRCClient {
 
     public onPair?: (hash: string) => void
+
+    private connectionOK: boolean = true
+    private pairOK: boolean = false
 
     private store: {
         hash?: string
@@ -27,6 +31,7 @@ class WRCClient {
         this.socket.on('signal', (signal: { action: string, data: any }) => this.onSignal(signal))
 
         this.socket.on('pair-request', this.pairRequestMessage.bind(this))
+        this.socket.on('pair-status', this.pairStatusMessage.bind(this))
 
         this.store = {
             hash: localStorage.get('hash'),
@@ -61,13 +66,17 @@ class WRCClient {
         return this.store.hash
     }
 
-    // public get connected () {
+    public get isReady () {
+        return this.isConnected && this.isPaired
+    }
 
-    // }
+    public get isConnected () {
+        return this.connectionOK
+    }
 
-    // public get paired () {
-
-    // }
+    public get isPaired () {
+        return this.pairOK
+    }
 
     private onSignal (signal: { action: string, data: any }) {
         const { action, data } = signal
@@ -93,10 +102,20 @@ class WRCClient {
         const { done, to, message } = data;
         if (done) {
             this.pairHash = to;
+            this.pairOK = true
             if (this.onPair) { this.onPair(this.pairHash) }
             console.log(message)
         } else {
             console.error(`Couldn't connect to ${to}: ${message}`)
+        }
+    }
+
+    private pairStatusMessage (data: { status: string, time: number }) {
+        if (data.status === 'connected') {
+            this.pairOK = true
+        }
+        if (data.status === 'disconnected') {
+            this.pairOK = false
         }
     }
 
