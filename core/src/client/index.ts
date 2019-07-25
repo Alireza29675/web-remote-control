@@ -10,7 +10,7 @@ type SignalCB = (data?: any) => void;
 class WRCClient {
 
     private store: {
-        hash?: number
+        hash?: string
         lastSocketID?: string
     }
     private socket: SocketIOClient.Socket
@@ -19,7 +19,7 @@ class WRCClient {
     constructor (server: string = 'ws://localhost', port: number = 3001) {
         this.socket = io(`${server}:${port}`)
         this.socket.on('message', console.log)
-        this.socket.on('register', (data: { hash: number }) => this.register(data.hash))
+        this.socket.on('register', (data: { hash: string }) => this.register(data.hash))
         this.socket.on('signal', (signal: { action: string, data: any }) => this.onSignal(signal))
 
         this.store = {
@@ -50,6 +50,10 @@ class WRCClient {
             if (set) set.add(cb)
         }
     }
+    
+    public get hash () {
+        return this.store.hash
+    }
 
     // public get connected () {
 
@@ -67,7 +71,7 @@ class WRCClient {
         }
     }
 
-    private register (hashToRegister: number) {
+    private register (hashToRegister: string) {
         const { hash, lastSocketID } = this.store
         if (hash) {
             this.socket.emit('im-alive', { hash, lastSocketID })

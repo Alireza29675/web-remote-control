@@ -3,11 +3,41 @@
     <title>Demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+        .hash {
+            font-weight: bold;
+            font-size: 25px;
+            margin: 40px;
+            position: relative;
+        }
+        .hash::before {
+            content: "This connection hash:";
+            position: absolute;
+            top: -20px;
+            font-size: 15px;
+            color: grey;
+        }
+        .paired::before {
+            content: "Paired with";
+            color: blue;
+        }
+        button {
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
     <noscript>
         You need to enable JavaScript to run this app.
     </noscript>
-    <div id="root"></div>
+    <div id="root">
+        <div class="hash self"></div>
+        <div class="hash paired"></div>
+        <button>Pair with another connection</button>
+    </div>
 </body>
 </html>

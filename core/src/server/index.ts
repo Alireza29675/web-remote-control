@@ -49,7 +49,7 @@ class WRCServer {
         this.sockets.set(hash.value, socket)
         socket.on('disconnect', this.disconnected.bind(this, hash))
         // Socket registration
-        socket.emit('register', { hash })
+        socket.emit('register', { hash: hash.value })
         socket.on('im-alive', (data) => this.recover(data, socket, hash))
         socket.on('pair-request', (data: {toHash: HashType}) => this.pairRequest(data.toHash, hash.value))
         socket.on('un-pair-request', () => this.unPairRequest(hash.value))
