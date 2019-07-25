@@ -15,7 +15,7 @@ const KILL_TIMEOUT = 60 * 1000
 // TODO: Must warn if localStorage is going to replace connection after same tab opened
 // TODO: New opened tab must be looking for a chance to connect instead of the other
 
-class SocketServer {
+class WRCServer {
 
     private salt = Math.random().toString(36).substr(2, 10)
     private generator: IterableIterator<HashType> = createHashGenerator(this.salt)
@@ -55,11 +55,9 @@ class SocketServer {
     }
 
     private disconnected (hash: { value: HashType }) {
-        console.log(hash)
         const timeout = setTimeout(() => {
             this.killTimeouts.delete(hash.value)
             this.sockets.delete(hash.value)
-            console.log(this.sockets.keys())
         }, KILL_TIMEOUT)
         this.killTimeouts.set(hash.value, timeout)
     }
@@ -91,4 +89,4 @@ class SocketServer {
 
 }
 
-export default SocketServer
+export default WRCServer

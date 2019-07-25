@@ -1,15 +1,12 @@
-import Emitter from './emitter'
-import Receiver from './receiver'
+import Client from './client'
 import Server from './server'
 
 export {
-    Emitter,
-    Receiver,
+    Client,
     Server
 };
 
 export default {
-    Emitter,
-    Receiver,
+    Client,
     Server
 }

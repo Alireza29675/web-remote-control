@@ -5,7 +5,7 @@ import store from 'store'
 // FIXME: One localStorage for all Emitter instances is a big mistake
 const localStorage = store.namespace('web-remote-control_core_meta')
 
-class Emitter {
+class WRCClient {
 
     private store: {
         hash?: number
@@ -36,4 +36,4 @@ class Emitter {
 
 }
 
-export default Emitter
+export default WRCClient

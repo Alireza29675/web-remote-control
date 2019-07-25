@@ -1,3 +1,3 @@
-import Emitter from '../../src/emitter'
+import Client from '../../src/client'
 
-const emitter = new Emitter()
+const client = new Client()
