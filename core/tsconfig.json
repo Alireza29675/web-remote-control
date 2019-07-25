@@ -6,6 +6,7 @@
     "outDir": "lib/",
     "allowJs": true,
     "skipLibCheck": true,
+    "noImplicitAny": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -14,6 +15,6 @@
     "isolatedModules": false,
     "jsx": "preserve"
   },
-  "include": ["src", "modules.d.ts"],
+  "include": ["src", "src/modules.d.ts"],
   "exclude": ["node_modules", "**/__tests__/*"]
 }

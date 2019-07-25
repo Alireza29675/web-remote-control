@@ -4,10 +4,6 @@ import createHashGenerator from '../shared/createHashGenerator'
 
 import { Server } from "http";
 
-enum SOCKET_TYPES {
-    EMITTER,
-    RECEIVER
-}
 type HashType = string
 
 const KILL_TIMEOUT = 60 * 1000
@@ -24,6 +20,9 @@ class WRCServer {
     private sockets: Map<HashType, io.Socket> = new Map<HashType, io.Socket>()
     private killTimeouts: Map<HashType, NodeJS.Timeout> = new Map<HashType, NodeJS.Timeout>()
     
+    private pairs: Map<HashType, HashType> = new Map<HashType, HashType>()
+    private pairsMirror: Map<HashType, HashType> = new Map<HashType, HashType>()
+
     constructor (port: number = 3001) {
         this.io = io.listen(port)
         this.io.on('connection', this.connected.bind(this))
@@ -52,10 +51,58 @@ class WRCServer {
         // Socket registration
         socket.emit('register', { hash })
         socket.on('im-alive', (data) => this.recover(data, socket, hash))
+        socket.on('pair-request', (data: {toHash: HashType}) => this.pairRequest(data.toHash, hash.value))
+        socket.on('un-pair-request', () => this.unPairRequest(hash.value))
+    }
+
+    private pair (hash: HashType, toHash: HashType) {
+        if (this.isBusy(hash) || this.isBusy(toHash)) {
+            return false;
+        }
+        this.pairs.set(hash, toHash);
+        this.pairs.set(toHash, hash);
+        return true;
+    }
+    private unPair (hash: HashType) {
+        const pair = this.getPair(hash)
+        this.pairs.delete(hash)
+        if (pair) {
+            this.pairsMirror.delete(pair)
+        }
+    }
+    private isBusy (hash: HashType) {
+        return this.pairs.has(hash) || this.pairsMirror.has(hash)
+    }
+    private getPair (hash: HashType): HashType | undefined {
+        return this.pairs.get(hash) || this.pairsMirror.get(hash)
+    }
+    private arePaired (hash: HashType, anotherHash: HashType) {
+        return ((this.isBusy(hash) && this.isBusy(anotherHash)) && this.getPair(hash) === anotherHash && this.getPair(anotherHash) === hash)
+    }
+
+    private pairRequest (toHash: HashType, hash: HashType) {
+        const socket = this.getSocket(hash)
+        if (!socket) {
+            return false;
+        }
+        if (this.isBusy(toHash)) {
+            socket.emit('pair-request', { done: false, message: `socket is paired with another device` })
+            return false;
+        }
+        if (this.isBusy(hash)) {
+            this.unPair(hash)
+            this.pair(hash, toHash)
+            socket.emit('pair-request', {done: true, message: `unpaired from previous connection and paired to new one`})
+        }
+    }
+
+    private unPairRequest (hash: HashType) {
+        this.unPair(hash)
     }
 
     private disconnected (hash: { value: HashType }) {
         const timeout = setTimeout(() => {
+            this.unPair(hash.value)
             this.killTimeouts.delete(hash.value)
             this.sockets.delete(hash.value)
         }, KILL_TIMEOUT)
