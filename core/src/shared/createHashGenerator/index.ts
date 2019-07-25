@@ -1,10 +1,9 @@
-import farmHash from 'farmhash'
+import md5 from 'md5'
 
 function* createHashGenerator (salt: string = '') {
-    const seed = Math.floor(Math.random() * 1000)
     let counter = 0;
     while (true) {
-        yield farmHash.hash32WithSeed(salt + (counter++), seed)
+        yield md5(salt + (counter++))
     }
 }
 
