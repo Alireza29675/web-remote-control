@@ -28,6 +28,7 @@ setInterval(() => {
 if (pairElement) {
     pairElement.addEventListener('click', () => {
         const hashToPair = prompt(`Enter connection's hash`) + ''
+        client.pair(hashToPair)
     })
 }
 
