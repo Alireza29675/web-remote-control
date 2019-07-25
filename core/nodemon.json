@@ -1,6 +1,7 @@
 {
-    "watch": ["examples/node", "src/server", "src/shared", "src/**/*.d.ts"],
-    "ext": "ts",
-    "ignore": [],
-    "exec": "ts-node ./examples/node/index.ts"
-  }
+  "quiet": true,
+  "watch": ["examples/node", "src/server", "src/shared", "src/**/*.d.ts"],
+  "ext": "ts",
+  "ignore": [],
+  "exec": "ts-node ./examples/node/index.ts"
+}
