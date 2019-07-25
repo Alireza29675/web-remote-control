@@ -9,6 +9,8 @@ type SignalCB = (data?: any) => void;
 
 class WRCClient {
 
+    public onConnect?: (hash: string) => void
+
     private store: {
         hash?: string
         lastSocketID?: string
@@ -16,13 +18,15 @@ class WRCClient {
     private socket: SocketIOClient.Socket
     private listeners: Map<string, Set<SignalCB>> = new Map<string, Set<SignalCB>>()
 
+    private pairHash?: string
+
     constructor (server: string = 'ws://localhost', port: number = 3001) {
         this.socket = io(`${server}:${port}`)
         this.socket.on('message', console.log)
         this.socket.on('register', (data: { hash: string }) => this.register(data.hash))
         this.socket.on('signal', (signal: { action: string, data: any }) => this.onSignal(signal))
 
-        this.socket.on('pair-request', console.log)
+        this.socket.on('pair-request', this.pairRequestMessage.bind(this))
 
         this.store = {
             hash: localStorage.get('hash'),
@@ -49,7 +53,7 @@ class WRCClient {
             this.listeners.set(action, set)
         } else {
             const set = this.listeners.get(action)
-            if (set) set.add(cb)
+            if (set) { set.add(cb) }
         }
     }
     
@@ -83,6 +87,17 @@ class WRCClient {
         }
         this.store.lastSocketID = md5(this.socket.id)
         localStorage.set('lastSocketID', this.store.lastSocketID)
+    }
+
+    private pairRequestMessage (data: { done: boolean, to: string, message: string }) {
+        const { done, to, message } = data;
+        if (done) {
+            this.pairHash = to;
+            if (this.onConnect) { this.onConnect(this.pairHash) }
+            console.log(message)
+        } else {
+            console.error(`Couldn't connect to ${to}: ${message}`)
+        }
     }
 
 }

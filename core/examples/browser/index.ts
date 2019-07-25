@@ -12,6 +12,10 @@ const unPairElement = $('.un-pair')
 if (selfHashElement) { selfHashElement.innerHTML = client.hash + '' }
 if (pairHashElement) { pairHashElement.innerHTML = '----------------------------------------------------' }
 
+client.onConnect = (hash) => {
+    if (pairHashElement) { pairHashElement.innerHTML = hash; }
+}
+
 if (pairElement) {
     pairElement.addEventListener('click', () => {
         const hashToPair = prompt(`Enter connection's hash`) + ''
