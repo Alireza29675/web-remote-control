@@ -11,6 +11,9 @@ const KILL_TIMEOUT = 60 * 1000
 // TODO: Must warn if localStorage is going to replace connection after same tab opened
 // TODO: New opened tab must be looking for a chance to connect instead of the other
 
+// TODO: If server restart all pairs will be screwed
+// TODO: Must write common interfaces and types between server and client (for sockets, everything)
+
 class WRCServer {
 
     private salt = Math.random().toString(36).substr(2, 10)
@@ -91,6 +94,12 @@ class WRCServer {
     private getPair (hash: HashType): HashType | undefined {
         return this.pairs.get(hash) || this.pairsMirror.get(hash)
     }
+    private getPairSocket (hash: HashType): io.Socket | undefined {
+        const pairHash = this.getPair(hash);
+        if (pairHash) {
+            return this.getSocket(pairHash)
+        }
+    }
     private arePaired (hash: HashType, anotherHash: HashType) {
         const pair = (this.getPair(hash) === anotherHash && this.getPair(anotherHash) === hash)
         return pair;
@@ -133,6 +142,11 @@ class WRCServer {
     }
 
     private disconnected (hash: { value: HashType }) {
+        const socket = this.getPairSocket(hash.value)
+        if (socket) {
+            socket.emit('pair-status', { status: 'disconnected', time: Date.now() })
+        }
+
         const timeout = setTimeout(() => {
             this.unPair(hash.value)
             this.killTimeouts.delete(hash.value)
@@ -141,15 +155,25 @@ class WRCServer {
         this.killTimeouts.set(hash.value, timeout)
     }
 
-    private recover (data: {hash: HashType, lastSocketID: string}, socket: io.Socket, hash: { value: HashType }) {
+    private recover (data: {hash: HashType, lastSocketID: string}, socket: io.Socket, tempHash: { value: HashType }) {
+        const { hash, lastSocketID } = data
+
+        // Notify its pair that this socket is alive again
+        const pairHash = this.getPair(hash)
+        const pairSocket = this.getPairSocket(hash)
+        if (pairSocket) {
+            socket.emit('pair-request', {done: true, to: pairHash, message: `re-paired`})
+            pairSocket.emit('pair-status', { status: 'connected', time: Date.now() })
+        }
+
         const previousSocket = this.sockets.get(data.hash);
         const previousSocketId = previousSocket ? md5(previousSocket.id) : null;
         
         if (previousSocketId) {
             if (previousSocketId === data.lastSocketID) {
-                this.sockets.delete(hash.value)
+                this.sockets.delete(tempHash.value)
                 this.sockets.set(data.hash, socket)
-                hash.value = data.hash
+                tempHash.value = data.hash
                 // Removing from killing timeouts
                 const killingTimeout = this.killTimeouts.get(data.hash)
                 if (killingTimeout) {
@@ -160,9 +184,9 @@ class WRCServer {
                 // It's a cheat or something
             }
         } else {
-            this.sockets.delete(hash.value)
+            this.sockets.delete(tempHash.value)
             this.sockets.set(data.hash, socket)
-            hash.value = data.hash
+            tempHash.value = data.hash
         }
     }
 

@@ -9,7 +9,7 @@ type SignalCB = (data?: any) => void;
 
 class WRCClient {
 
-    public onConnect?: (hash: string) => void
+    public onPair?: (hash: string) => void
 
     private store: {
         hash?: string
@@ -93,7 +93,7 @@ class WRCClient {
         const { done, to, message } = data;
         if (done) {
             this.pairHash = to;
-            if (this.onConnect) { this.onConnect(this.pairHash) }
+            if (this.onPair) { this.onPair(this.pairHash) }
             console.log(message)
         } else {
             console.error(`Couldn't connect to ${to}: ${message}`)

@@ -12,7 +12,7 @@ const unPairElement = $('.un-pair')
 if (selfHashElement) { selfHashElement.innerHTML = client.hash + '' }
 if (pairHashElement) { pairHashElement.innerHTML = '----------------------------------------------------' }
 
-client.onConnect = (hash) => {
+client.onPair = (hash) => {
     if (pairHashElement) { pairHashElement.innerHTML = hash; }
 }
 
