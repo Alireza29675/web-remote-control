@@ -1,6 +1,6 @@
 import Client from '../../src/client'
 
-const client = new Client()
+const client = new Client('test', { port: 3001 })
 
 const $: (q: string) => HTMLElement | null = (q) => document.querySelector(q)
 
@@ -14,7 +14,6 @@ if (pairHashElement) { pairHashElement.innerHTML = '----------------------------
 
 client.onPair = (hash) => {
     if (pairHashElement) { pairHashElement.innerHTML = hash; }
-    console.log(client.isReady)
 }
 
 client.on('up', console.log)

@@ -2,19 +2,30 @@ import md5 from 'md5'
 import io from 'socket.io-client'
 import store from 'store'
 
-// FIXME: One localStorage for all Emitter instances is a big mistake
 // TODO: Methods for ask which behaves like http-server
-const localStorage = store.namespace('web-remote-control_core_meta')
 
 type SignalCB = (data?: any) => void;
+
+interface IConfig {
+    port?: number
+    url?: string
+}
 
 class WRCClient {
 
     public onPair?: (hash: string) => void
 
-    private connectionOK: boolean = true
-    private pairOK: boolean = false
+    private _connectionConnected: boolean = false
+    private _pairConnected: boolean = false
 
+    private storage: StoreJsAPI
+
+    private config: IConfig = {
+        port: 3001,
+        url: 'ws://localhost'
+    }
+
+    // TODO If there's a storage what the hell is a store?
     private store: {
         hash?: string
         lastSocketID?: string
@@ -24,8 +35,15 @@ class WRCClient {
 
     private pairHash?: string
 
-    constructor (server: string = 'ws://localhost', port: number = 3001) {
-        this.socket = io(`${server}:${port}`)
+    constructor (name: string, config?: IConfig) {
+        if (config) { this.config = {...this.config, ...config} }
+        const { port, url } = this.config
+        
+        this.storage = store.namespace(`wrc_core_meta_${name}`)
+
+        this.socket = io(`${url}:${port}`)
+        this.socket.on('connect', () => { this.connectionConnected = true });
+        this.socket.on('disconnect', () => { this.connectionConnected = false });
         this.socket.on('message', console.log)
         this.socket.on('register', (data: { hash: string }) => this.register(data.hash))
         this.socket.on('signal', (signal: { action: string, data: any }) => this.onSignal(signal))
@@ -34,8 +52,8 @@ class WRCClient {
         this.socket.on('pair-status', this.pairStatusMessage.bind(this))
 
         this.store = {
-            hash: localStorage.get('hash'),
-            lastSocketID: localStorage.get('lastSocketID')
+            hash: this.storage.get('hash'),
+            lastSocketID: this.storage.get('lastSocketID')
         }
     }
 
@@ -71,11 +89,23 @@ class WRCClient {
     }
 
     public get isConnected () {
-        return this.connectionOK
+        return this._connectionConnected
     }
 
     public get isPaired () {
-        return this.pairOK
+        return this._pairConnected
+    }
+
+    private set connectionConnected (to: boolean) {
+        if (to === this.isConnected) { return; }
+        if (!to) {
+            this.pairConnected = false
+        }
+        this._connectionConnected = to;
+    }
+    private set pairConnected (to: boolean) {
+        if (to === this.isPaired) { return; }
+        this._pairConnected = to;
     }
 
     private onSignal (signal: { action: string, data: any }) {
@@ -92,19 +122,18 @@ class WRCClient {
             this.socket.emit('im-alive', { hash, lastSocketID })
         } else {
             this.store.hash = hashToRegister
-            localStorage.set('hash', hashToRegister)
+            this.storage.set('hash', hashToRegister)
         }
         this.store.lastSocketID = md5(this.socket.id)
-        localStorage.set('lastSocketID', this.store.lastSocketID)
+        this.storage.set('lastSocketID', this.store.lastSocketID)
     }
 
     private pairRequestMessage (data: { done: boolean, to: string, message: string }) {
         const { done, to, message } = data;
         if (done) {
             this.pairHash = to;
-            this.pairOK = true
+            this.pairConnected = true
             if (this.onPair) { this.onPair(this.pairHash) }
-            console.log(message)
         } else {
             console.error(`Couldn't connect to ${to}: ${message}`)
         }
@@ -112,10 +141,10 @@ class WRCClient {
 
     private pairStatusMessage (data: { status: string, time: number }) {
         if (data.status === 'connected') {
-            this.pairOK = true
+            this.pairConnected = true
         }
         if (data.status === 'disconnected') {
-            this.pairOK = false
+            this.pairConnected = false
         }
     }
 

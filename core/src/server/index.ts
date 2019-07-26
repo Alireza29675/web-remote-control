@@ -77,12 +77,23 @@ class WRCServer {
         if (this.isBusy(hash) || this.isBusy(toHash)) {
             return false;
         }
+        const socketOne = this.getSocket(hash);
+        const socketTwo = this.getSocket(toHash);
+        if (socketOne) { socketOne.emit('pair-status', { status: 'connected', time: Date.now() }) }
+        if (socketTwo) { socketTwo.emit('pair-status', { status: 'connected', time: Date.now() }) }
         this.pairs.set(hash, toHash);
         this.pairsMirror.set(toHash, hash);
         return true;
     }
     private unPair (hash: HashType) {
         const pair = this.getPair(hash)
+
+        const socketOne = this.getSocket(hash);
+        const socketTwo = this.getPairSocket(hash);
+
+        if (socketOne) { socketOne.emit('pair-status', { status: 'disconnected', time: Date.now() }) }
+        if (socketTwo) { socketTwo.emit('pair-status', { status: 'disconnected', time: Date.now() }) }
+
         this.pairs.delete(hash)
         if (pair) {
             this.pairsMirror.delete(pair)
@@ -144,7 +155,7 @@ class WRCServer {
     private disconnected (hash: { value: HashType }) {
         const socket = this.getPairSocket(hash.value)
         if (socket) {
-            socket.emit('pair-status', { status: 'disconnected', time: Date.now() })
+            socket.emit('pair-status', { status: 'pair:disconnected', time: Date.now() })
         }
 
         const timeout = setTimeout(() => {
